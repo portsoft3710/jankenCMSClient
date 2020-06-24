@@ -596,6 +596,12 @@ function play(result){
         return;
     }
 }
+window.onerror = function (message, fileName, lineNumber, columnNumber, error) {
+    alert(message + '\n' +
+          fileName + ':' + lineNumber + ':' + columnNumber + '\n' +
+          error.stack);
+    return true;
+}
 </script>
 </body>
 </html>
