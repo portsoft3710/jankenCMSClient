@@ -33,7 +33,7 @@
 <script>
 window.addEventListener('load', function() {
   if ('serviceWorker' in navigator) {
-    navigator.serviceWorker.register("./service-worker.js")
+    navigator.serviceWorker.register("./firebase-messaging-sw.js")
       .then(function(registration) {
         console.log("serviceWorker registed.");
       }).catch(function(error) {
@@ -44,7 +44,7 @@ window.addEventListener('load', function() {
 </script>
 </head>
 
-<body onload="bodyOnload()" style="background-color:#fff;">
+<body style="background-color:#fff;">
 <link href="https://fonts.googleapis.com/css?family=Kosugi+Maru" rel="stylesheet">
 
 <div id="top" style="background-color: #66cdaa; padding-top: 5px; padding-bottom: 2px; width: 100%; text-align: center;">
@@ -65,7 +65,7 @@ window.addEventListener('load', function() {
 
 <div class="wrapper">
 <div class="janken-wrapper">
-	<p>1回目チャレンジタイム（12:00）</p>
+	<p>1回目チャレンジタイム（<span id="janken1-time"></span>）</p>
 	<div class="janken"><input type="radio" id="janken1-g" name="janken1">
 	<label for="janken1-g" onclick="showMessage('1')"><img src="images/gu.png"></label></div>
 	<div class="janken"><input type="radio" id="janken1-c" name="janken1">
@@ -76,7 +76,7 @@ window.addEventListener('load', function() {
 </div>
 <div class="timer" id="timer1" style="text-align: center; margin-top: 0px;"></div>
 <div class="janken-wrapper">
-	<p>2回目チャレンジタイム（17:00）</p>
+	<p>2回目チャレンジタイム（<span id="janken2-time"></span>）</p>
 	<div class="janken"><input type="radio" id="janken2-g" name="janken2">
 	<label for="janken2-g" onclick="showMessage('2')"><img src="images/gu.png"></label></div>
 	<div class="janken"><input type="radio" id="janken2-c" name="janken2">
@@ -87,7 +87,7 @@ window.addEventListener('load', function() {
 </div>
 <div class="timer" id="timer2" style="text-align: center; margin-top: 0px;"></div>
 <div class="janken-wrapper">
-	<p>3回目チャレンジタイム（23:00）</p>
+	<p>3回目チャレンジタイム（<span id="janken3-time"></span>）</p>
 	<div class="janken"><input type="radio" id="janken3-g" name="janken3">
 	<label for="janken3-g" onclick="showMessage('3')"><img src="images/gu.png"></label></div>
 	<div class="janken"><input type="radio" id="janken3-c" name="janken3">
@@ -132,8 +132,7 @@ function audioPlay() {
     document.getElementById('audio-win').play();
     document.removeEventListener('click', audioPlay);
 } 
-
-var API_URL = 'http://localhost:8080/JankenCMS/jankenAPI.php?';
+var API_URL = 'https://main-orangetree.ssl-lolipop.jp/Content/janken_cmsver00/JankenCMS/jankenAPI.php?';
     
 var MAX_POINT = 200;
 var POINT_KEY = 'jankenPoint';
@@ -146,20 +145,25 @@ RESULT_MESSAGE['DRAW'] = 'あいこでした。。';
 RESULT_MESSAGE['LOSE'] = '残念。。　負けました';
 
 //ジャンケンを選択できる時間(何時～何時まで
-var JANKEN_TIME1_FROM = new Date(new Date().setHours(0, 0, 01));
-var JANKEN_TIME1_TO = new Date(new Date().setHours(23, 00, 0));
-var JANKEN_TIME2_FROM = new Date(new Date().setHours(00, 00, 01));
-var JANKEN_TIME2_TO = new Date(new Date().setHours(23, 59, 0));
-var JANKEN_TIME3_FROM = new Date(new Date().setHours(00, 00, 01));
-var JANKEN_TIME3_TO = new Date(new Date().setHours(23, 00, 0));
+var JANKEN_TIME1_FROM;
+var JANKEN_TIME1_TO;
+var JANKEN_TIME2_FROM;
+var JANKEN_TIME2_TO;
+var JANKEN_TIME3_FROM;
+var JANKEN_TIME3_TO;
 
 var JANKEN_G = 'JANKEN_G'
 var JANKEN_C = 'JANKEN_C';
 var JANKEN_P = 'JANKEN_P';
 
+var COUNTDOWN_END_SECONDS = 10;
+var COUNTDOWN_START_MINITS = 5;
+    
 // RESETがtrueの場合リセット→ RESET_TIME以前の時間に取得したトリガーは無効として扱う
 var RESET = false;
 var RESET_TIME = new Date(new Date().setHours(09, 50, 0));
+init();
+
 // サーバで決めたjakenの設定をlocalStrageに持つ
 const param = {};
 param['func'] = 'getJankenTime';
@@ -191,13 +195,17 @@ get(API_URL + paramString).then(function(response) {
         const now = new Date();
         const dt = now.getFullYear() + '-' + ('0' + (now.getMonth() + 1)).slice(-2) + '-' + ('0' + now .getDate()).slice(-2);
         data['settingTime'] = dt + ' '+ response[3]['settingTime'];
+		data['isJanken1'] = + response[1]['is_janken'];
+		data['isJanken2'] = + response[2]['is_janken'];
+		data['isJanken3'] = + response[3]['is_janken'];
         data['janken1'] = dt + ' ' + response[1]['time'];
         data['janken2'] = dt + ' ' + response[2]['time'];
         data['janken3'] = dt + ' ' + response[3]['time'];
+                
         localStorage.setItem('jankenSetting', JSON.stringify(data));
     }
  	
-}).then(bodyOnload).then(init).then(countdownTimer);
+}).then(bodyOnload).then(countdownTimer);
 	
 	
 function bodyOnload(){
@@ -229,6 +237,11 @@ function bodyOnload(){
 }
 function init() {
 	const today00 = new Date(new Date().setHours(0, 0, 0, 0));
+	let lastAccess = '';
+	if(localStorage.getItem('jankenLastAccess')){
+		lastAccess = new Date(localStorage.getItem('jankenLastAccess'));
+	}
+	localStorage.setItem('jankenLastAccess', new Date());
 	for(let i = 1; i <= 3; i++){
 		$('janken' + i + '-g').value = JANKEN_G;
 		$('janken' + i + '-c').value = JANKEN_C;
@@ -241,7 +254,7 @@ function init() {
             if(result['result'] == 'LOSE') document.getElementById('janken-result' + i).textContent = '負け';
             if(result['result'] == 'DRAW') document.getElementById('janken-result' + i).textContent = 'あいこ';
             
-			if(new Date(result['jankenTime']) < today00){
+			if(lastAccess != '' && lastAccess < today00){
 				localStorage.removeItem('jankenResult' + i);
 			}
 			else{
@@ -258,6 +271,13 @@ function init() {
 			}
 		}
 	}
+    if(localStorage.getItem('jankenSetting')){
+        const storage = JSON.parse(localStorage.getItem('jankenSetting'));
+        $('janken1-time').textContent = storage['janken1'].split(' ')[1];
+        $('janken2-time').textContent = storage['janken2'].split(' ')[1];
+        $('janken3-time').textContent = storage['janken3'].split(' ')[1];
+    }
+    
 	dispCurrentPoint();
 }
 
@@ -299,10 +319,11 @@ function doJanken(jankenNum){
                 localStorage.setItem('jankenResult' + jankenNum, JSON.stringify(result));
                 localStorage.setItem(POINT_KEY, curretPoint);
                 pointUse(curretPoint);
+				play(response['result']);
                 MessageBox.Alert(
                     RESULT_MESSAGE[response['result']] + '<br>' + response['point'] + 'ポイント獲得しました。',
                     function(){
-						play(response['result']);
+						
                     }
                 );
             });
@@ -403,20 +424,19 @@ function showMessage(jankenNum){
     let janken_time;
     const storage = JSON.parse(localStorage.getItem('jankenSetting'));
 	if(jankenNum == 1){
-		janken_time_from = JANKEN_TIME1_FROM;
-		janken_time_to = JANKEN_TIME1_TO;
         janken_time = new Date(storage['janken1']);
 	}
 	else if(jankenNum == 2){
-		janken_time_from = JANKEN_TIME2_FROM;
-		janken_time_to = JANKEN_TIME2_TO;
         janken_time = new Date(storage['janken2']);
 	}
 	else if(jankenNum == 3){
-		janken_time_from = JANKEN_TIME3_FROM;
-		janken_time_to = JANKEN_TIME3_TO;
         janken_time = new Date(storage['janken3']);
 	}
+    janken_time_to = new Date(janken_time.getTime());
+    janken_time_to.setSeconds(janken_time_to.getSeconds() - COUNTDOWN_END_SECONDS);
+
+    janken_time_from = new Date(janken_time_to.getTime());
+    janken_time_from.setMinutes(janken_time_from.getMinutes() - COUNTDOWN_START_MINITS);
 	
 	if(now < janken_time_from || janken_time_to < now){
 		$('confirmOk').textContent = 'OK';
@@ -492,63 +512,69 @@ function showMessage(jankenNum){
 function countdownTimer(){
 	const now = new Date();
     const storage = JSON.parse(localStorage.getItem('jankenSetting'));
-	for(let i = 1; i <= 3; i++){
-		let janken_time_from;
-		let janken_time_to;
-		let janken_time;
-		if(i == 1){
-			janken_time_from = JANKEN_TIME1_FROM;
-			janken_time_to = JANKEN_TIME1_TO;
-			janken_time = new Date(storage['janken1']);
-		}
-		else if(i == 2){
-			janken_time_from = JANKEN_TIME2_FROM;
-			janken_time_to = JANKEN_TIME2_TO;
-			janken_time = new Date(storage['janken2']);
-		}
-		else if(i == 3){
-			janken_time_from = JANKEN_TIME3_FROM;
-			janken_time_to = JANKEN_TIME3_TO;
-			janken_time = new Date(storage['janken3']);
-		}
-		let disabledFlg = true;
-        let insert = '';
-		if(janken_time_from <= now && now <= janken_time_to){
-			let period = janken_time_to - now ;
-			const addZero = function(n){return('0'+n).slice(-2);}
-			const addZeroDay = function(n){return('0'+n).slice(-3);}
-			if(period >= 0) {
-				const day = Math.floor(period / (1000 * 60 * 60 * 24));
-				period -=  (day　*(1000 * 60 * 60 * 24));
-				const hour = Math.floor(period / (1000 * 60 * 60));
-				period -= (hour *(1000 * 60 * 60));
-				const minutes =  Math.floor(period / (1000 * 60));
-				period -= (minutes * (1000 * 60));
-				const second = Math.floor(period / 1000);
-				if(hour > 0) insert = '<span class="h">' + addZero(hour) + '時間'+'</span>';
-				if(minutes > 0) insert +=  '<span class="m">' + addZero(minutes) +'分' + '</span>';
-				insert += '<span class="s">' + addZero(second)+ '秒'+ '</span>';
-                insert = '選択終了まで残り ' + insert;
-				disabledFlg = false;
-			
+	if(storage != null){
+		for(let i = 1; i <= 3; i++){
+			let is_janken;
+			let janken_time_from;
+			let janken_time_to;
+			let janken_time;
+			if(i == 1){
+				janken_time = new Date(storage['janken1']);
+				is_janken = storage['isJanken1'];
+			}
+			else if(i == 2){
+				janken_time = new Date(storage['janken2']);
+				is_janken = storage['isJanken2'];
+			}
+			else if(i == 3){
+				janken_time = new Date(storage['janken3']);
+				is_janken = storage['isJanken3'];
+			}
+			let disabledFlg = true;
+			let insert = '';
+            janken_time_to = new Date(janken_time.getTime());
+            janken_time_to.setSeconds(janken_time_to.getSeconds() - COUNTDOWN_END_SECONDS);
+
+            janken_time_from = new Date(janken_time_to.getTime());
+            janken_time_from.setMinutes(janken_time_from.getMinutes() - COUNTDOWN_START_MINITS);
+            
+            if(janken_time_from <= now && now <= janken_time_to){
+				let period = janken_time_to - now ;
+				const addZero = function(n){return('0'+n).slice(-2);}
+				const addZeroDay = function(n){return('0'+n).slice(-3);}
+				if(period >= 0) {
+					const day = Math.floor(period / (1000 * 60 * 60 * 24));
+					period -=  (day　*(1000 * 60 * 60 * 24));
+					const hour = Math.floor(period / (1000 * 60 * 60));
+					period -= (hour *(1000 * 60 * 60));
+					const minutes =  Math.floor(period / (1000 * 60));
+					period -= (minutes * (1000 * 60));
+					const second = Math.floor(period / 1000);
+					if(hour > 0) insert = '<span class="h">' + addZero(hour) + '時間'+'</span>';
+					if(minutes > 0) insert +=  '<span class="m">' + addZero(minutes) +'分' + '</span>';
+					insert += '<span class="s">' + addZero(second)+ '秒'+ '</span>';
+					insert = '選択終了まで残り ' + insert;
+					disabledFlg = false;
+
+				}
+				else{
+					insert = '選択終了まで残り --時間--分--秒';
+				}
 			}
 			else{
-				insert = '選択終了まで残り --時間--分--秒';
+				insert = '選択終了まで残り --時間--分--秒';			
 			}
-		}
-		else{
-			insert = '選択終了まで残り --時間--分--秒';			
-		}
-		$('timer' + i).innerHTML = insert;
-		const jankenRadio = document.getElementsByName('janken' + i);
-		for(let i = 0;i < jankenRadio.length; i++){
-			jankenRadio[i].disabled = disabledFlg;
-		}
-		if(janken_time <= now){
-            let inTime = janken_time;
-            inTime.setSeconds(inTime.getSeconds() + 300000);
-			if(new Date(inTime) >= now){
-				doJanken(i);
+			$('timer' + i).innerHTML = insert;
+			const jankenRadio = document.getElementsByName('janken' + i);
+			for(let i = 0;i < jankenRadio.length; i++){
+				jankenRadio[i].disabled = disabledFlg;
+			}
+			if(is_janken == '1' && janken_time <= now){
+				let inTime = new Date(janken_time.getTime());
+				inTime.setSeconds(inTime.getSeconds() + 3);
+				if(new Date(inTime) >= now){
+					doJanken(i);
+				}
 			}
 		}
 	}
@@ -562,8 +588,13 @@ function play(result){
     if(result == 'WIN') audioId = 'audio-win';
     if(result == 'DRAW') audioId = 'audio-draw';
     if(result == 'LOSE') audioId = 'audio-lose';
-    document.getElementById(audioId).muted = false;
-    document.getElementById(audioId).play();
+    try{
+        document.getElementById(audioId).muted = false;
+        document.getElementById(audioId).play();
+    }
+    catch(e){
+        return;
+    }
 }
 </script>
 </body>
