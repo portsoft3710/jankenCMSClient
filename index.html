@@ -195,13 +195,15 @@ get(API_URL + paramString).then(function(response) {
         const now = new Date();
         const dt = now.getFullYear() + '-' + ('0' + (now.getMonth() + 1)).slice(-2) + '-' + ('0' + now .getDate()).slice(-2);
         data['settingTime'] = dt + ' '+ response[3]['settingTime'];
-		data['isJanken1'] = + response[1]['is_janken'];
-		data['isJanken2'] = + response[2]['is_janken'];
-		data['isJanken3'] = + response[3]['is_janken'];
+	data['isJanken1'] = + response[1]['is_janken'];
+	data['isJanken2'] = + response[2]['is_janken'];
+	data['isJanken3'] = + response[3]['is_janken'];
         data['janken1'] = dt + ' ' + response[1]['time'];
         data['janken2'] = dt + ' ' + response[2]['time'];
         data['janken3'] = dt + ' ' + response[3]['time'];
-                
+        $('janken1-time').textContent = response[1]['time'];
+        $('janken2-time').textContent = response[2]['time'];
+        $('janken3-time').textContent = response[3]['time'];                
         localStorage.setItem('jankenSetting', JSON.stringify(data));
     }
  	
@@ -602,6 +604,12 @@ window.onerror = function (message, fileName, lineNumber, columnNumber, error) {
           error.stack);
     return true;
 }
+window.addEventListener('unhandledrejection', function(event) {
+  // イベントオブジェクトは2つの特別なプロパティを持っています:
+  alert(event.promise); // [object Promise] - エラーを生成した promise
+  alert(event.reason); // Error: Whoops! - 未処理のエラーオブジェクト
+});
+
 </script>
 </body>
 </html>
