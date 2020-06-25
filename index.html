@@ -168,7 +168,7 @@ init();
 const param = {};
 param['func'] = 'getJankenTime';
 const now = new Date();
-var jankenDate = now.getFullYear() + '-' + ('0' + (now.getMonth() + 1)).slice(-2) + '-' + ('0' + now .getDate()).slice(-2);
+var jankenDate = now.getFullYear() + '/' + ('0' + (now.getMonth() + 1)).slice(-2) + '/' + ('0' + now .getDate()).slice(-2);
 param['date'] = jankenDate;
 
 if(localStorage.getItem('jankenSetting')){
@@ -193,7 +193,7 @@ get(API_URL + paramString).then(function(response) {
     if(response[1]){
         const data = {};
         const now = new Date();
-        const dt = now.getFullYear() + '-' + ('0' + (now.getMonth() + 1)).slice(-2) + '-' + ('0' + now .getDate()).slice(-2);
+        const dt = now.getFullYear() + '/' + ('0' + (now.getMonth() + 1)).slice(-2) + '/' + ('0' + now .getDate()).slice(-2);
         data['settingTime'] = dt + ' '+ response[3]['settingTime'];
 	data['isJanken1'] = + response[1]['is_janken'];
 	data['isJanken2'] = + response[2]['is_janken'];
@@ -439,7 +439,6 @@ function showMessage(jankenNum){
 
     janken_time_from = new Date(janken_time_to.getTime());
     janken_time_from.setMinutes(janken_time_from.getMinutes() - COUNTDOWN_START_MINITS);
-    alert(localStorage.getItem('jankenSetting'));
 	if(now < janken_time_from || janken_time_to < now){
 		$('confirmOk').textContent = 'OK';
 		MessageBox.Alert(
