@@ -420,6 +420,7 @@ function reset(){
 	}
 }
 function showMessage(jankenNum){
+    try{
 	const now = new Date();
 	let janken_time_from;
 	let janken_time_to;
@@ -510,6 +511,9 @@ function showMessage(jankenNum){
             }
 		}
 	}
+    }catch(err){
+        alert(err);
+    }
 }
 function countdownTimer(){
 	const now = new Date();
@@ -598,18 +602,6 @@ function play(result){
         return;
     }
 }
-window.onerror = function (message, fileName, lineNumber, columnNumber, error) {
-    alert(message + '\n' +
-          fileName + ':' + lineNumber + ':' + columnNumber + '\n' +
-          error.stack);
-    return true;
-}
-window.addEventListener('unhandledrejection', function(event) {
-  // イベントオブジェクトは2つの特別なプロパティを持っています:
-  alert(event.promise); // [object Promise] - エラーを生成した promise
-  alert(event.reason); // Error: Whoops! - 未処理のエラーオブジェクト
-});
-
 </script>
 </body>
 </html>
