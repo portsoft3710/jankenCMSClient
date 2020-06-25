@@ -439,7 +439,8 @@ function showMessage(jankenNum){
 
     janken_time_from = new Date(janken_time_to.getTime());
     janken_time_from.setMinutes(janken_time_from.getMinutes() - COUNTDOWN_START_MINITS);
-	
+	alert(janken_time_from);
+	alert(janken_time_to);
 	if(now < janken_time_from || janken_time_to < now){
 		$('confirmOk').textContent = 'OK';
 		MessageBox.Alert(
@@ -483,7 +484,6 @@ function showMessage(jankenNum){
 			MessageBox.Confirm(
 			"このじゃんけんで決定しますか？", 
 			function(){
-                alert('1');
 				const jankenRadio = document.getElementsByName('janken' + jankenNum);
                 let result;
                 if(localStorage.getItem('jankenResult' + jankenNum)){
@@ -492,7 +492,6 @@ function showMessage(jankenNum){
                 else{
                     result = {};
                 }
-                alert('2');
 				result['jankenTime'] = new Date();
 				for(let i = 0;i < jankenRadio.length; i++){
 					if(jankenRadio[i].checked){
@@ -501,7 +500,6 @@ function showMessage(jankenNum){
 					}
 					jankenRadio[i].disabled = true;
 				}
-                alert('3');
 			},
 			function(){                
                 const jankenRadio = document.getElementsByName('janken' + jankenNum);
@@ -601,6 +599,7 @@ function play(result){
         return;
     }
 }
+
 
 </script>
 </body>
