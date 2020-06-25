@@ -439,8 +439,7 @@ function showMessage(jankenNum){
 
     janken_time_from = new Date(janken_time_to.getTime());
     janken_time_from.setMinutes(janken_time_from.getMinutes() - COUNTDOWN_START_MINITS);
-	alert(janken_time_from);
-	alert(janken_time_to);
+	alert(janken_time);
 	if(now < janken_time_from || janken_time_to < now){
 		$('confirmOk').textContent = 'OK';
 		MessageBox.Alert(
