@@ -420,7 +420,6 @@ function reset(){
 	}
 }
 function showMessage(jankenNum){
-    try{
 	const now = new Date();
 	let janken_time_from;
 	let janken_time_to;
@@ -484,6 +483,7 @@ function showMessage(jankenNum){
 			MessageBox.Confirm(
 			"このじゃんけんで決定しますか？", 
 			function(){
+                alert('1');
 				const jankenRadio = document.getElementsByName('janken' + jankenNum);
                 let result;
                 if(localStorage.getItem('jankenResult' + jankenNum)){
@@ -492,6 +492,7 @@ function showMessage(jankenNum){
                 else{
                     result = {};
                 }
+                alert('2');
 				result['jankenTime'] = new Date();
 				for(let i = 0;i < jankenRadio.length; i++){
 					if(jankenRadio[i].checked){
@@ -500,6 +501,7 @@ function showMessage(jankenNum){
 					}
 					jankenRadio[i].disabled = true;
 				}
+                alert('3');
 			},
 			function(){                
                 const jankenRadio = document.getElementsByName('janken' + jankenNum);
@@ -511,9 +513,6 @@ function showMessage(jankenNum){
             }
 		}
 	}
-    }catch(err){
-        alert(err);
-    }
 }
 function countdownTimer(){
 	const now = new Date();
@@ -602,6 +601,7 @@ function play(result){
         return;
     }
 }
+
 </script>
 </body>
 </html>
