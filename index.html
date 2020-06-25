@@ -130,6 +130,10 @@ document.addEventListener('click', audioPlay);
 function audioPlay() {
     document.getElementById('audio-win').muted = true;
     document.getElementById('audio-win').play();
+    document.getElementById('audio-draw').muted = true;
+    document.getElementById('audio-draw').play();
+    document.getElementById('audio-lose').muted = true;
+    document.getElementById('audio-lose').play();
     document.removeEventListener('click', audioPlay);
 } 
 var API_URL = 'https://main-orangetree.ssl-lolipop.jp/Content/janken_cmsver00/JankenCMS/jankenAPI.php?';
